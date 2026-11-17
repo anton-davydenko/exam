@@ -480,7 +480,7 @@ function go(v, opts) {
 }
 function render() {
   const v = $('#view');
-  const map = { home: renderHome, 'kb-lock': renderKbLock, kb: renderKb, quiz: renderQuizView, pin: renderPin, admin: renderAdmin };
+  const map = { home: renderHome, learn: renderLearn, 'kb-lock': renderKbLock, kb: renderKb, quiz: renderQuizView, pin: renderPin, admin: renderAdmin };
   v.replaceChildren((map[view] || renderHome)());
   $('#nav-home').hidden = view === 'home';
 }
@@ -501,19 +501,15 @@ function renderHome() {
       h('div', { class: 'home-photo' }, h('img', { src: SITE.cover, alt: 'Анна Капитонова, врач-косметолог, электролог' })),
       h('div', { class: 'home-text' },
         h('h1', null, 'my ', h('em', null, 'electra')),
-        h('div', { class: 'choices three' },
+        h('div', { class: 'choices' },
           h('a', { class: 'choice accent', id: 'go-book', href: BOOKING_URL, target: '_blank', rel: 'noopener' },
             h('div', { class: 'choice-top' }, calIcon()),
             h('b', null, 'Записаться онлайн'),
             h('span', null, 'Выберите процедуру, мастера и удобное время.')),
-          h('button', { class: 'choice', id: 'go-test', onclick: () => { quiz = null; go('quiz'); } },
-            h('div', { class: 'choice-top' }, testIcon()),
-            h('b', null, 'Обучение'),
-            h('span', null, `Итоговый тест курса: ${Math.min(data.questionsPerAttempt || 20, data.questions.length)} вопросов, разбор ошибок и сертификат.`)),
-          h('button', { class: 'choice', id: 'go-kb', onclick: () => go(kb ? 'kb' : 'kb-lock', { section: null }) },
+          h('button', { class: 'choice', id: 'go-learn', onclick: () => go(kb ? 'learn' : 'kb-lock') },
             h('div', { class: 'choice-top' }, bookIcon(), kb ? null : h('span', { class: 'pill' }, lockIcon(), 'по паролю')),
-            h('b', null, 'База знаний'),
-            h('span', null, nSec ? `Методичка курса: ${nSec} ${plural(nSec, 'раздел', 'раздела', 'разделов')}, схемы и фото из практики.` : 'Методичка курса, схемы и фото из практики.'))),
+            h('b', null, 'Обучение'),
+            h('span', null, 'База знаний курса и итоговый тест с сертификатом.'))),
         h('a', { class: 'master-entry', href: 'master.html' },
           h('span', { class: 'ico', html: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' }),
           h('span', { class: 'master-entry-text' }, h('b', null, 'Кабинет мастера')),
@@ -540,6 +536,25 @@ function contactsBlock() {
   return items.length ? h('section', { class: 'contacts' }, items) : null;
 }
 
+// ---------- learning hub (behind the knowledge-base password)
+function renderLearn() {
+  if (!kb) return renderKbLock();
+  const nSec = data.kbSectionCount || (kb.sections || []).length;
+  return h('div', { class: 'wrap' },
+    h('section', { class: 'card', style: 'display:grid;gap:6px' },
+      h('div', { class: 'label' }, 'Обучение'),
+      h('h2', { style: 'font-size:clamp(24px,5vw,32px)' }, 'Материалы курса')),
+    h('div', { class: 'choices' },
+      h('button', { class: 'choice', id: 'go-kb', onclick: () => go('kb', { section: null }) },
+        h('div', { class: 'choice-top' }, bookIcon()),
+        h('b', null, 'База знаний'),
+        h('span', null, nSec ? `Методичка курса: ${nSec} ${plural(nSec, 'раздел', 'раздела', 'разделов')}, схемы и фото из практики.` : 'Методичка курса, схемы и фото из практики.')),
+      h('button', { class: 'choice accent', id: 'go-test', onclick: () => { quiz = null; go('quiz'); } },
+        h('div', { class: 'choice-top' }, testIcon()),
+        h('b', null, 'Итоговый тест'),
+        h('span', null, `${Math.min(data.questionsPerAttempt || 20, data.questions.length)} вопросов, баллы, разбор ошибок и сертификат.`))));
+}
+
 // ---------- knowledge base: lock
 function unlockKb(pw) {
   try {
@@ -556,7 +571,7 @@ function renderKbLock() {
   const tryOpen = () => {
     btn.disabled = true; btn.textContent = 'Открываю…';
     setTimeout(() => {
-      if (unlockKb(inp.value.trim())) go('kb', { section: null });
+      if (unlockKb(inp.value.trim())) go('learn');
       else { err.hidden = false; btn.disabled = false; btn.textContent = 'Открыть'; inp.select(); }
     }, 30);
   };
@@ -565,8 +580,8 @@ function renderKbLock() {
   setTimeout(() => inp.focus(), 0);
   return h('div', { class: 'wrap' }, h('section', { class: 'card narrow', style: 'display:grid;gap:14px' },
     h('div', { class: 'lock-badge' }, lockIcon()),
-    h('h2', { style: 'font-size:22px' }, 'База знаний'),
-    h('p', { class: 'muted', style: 'margin:0' }, 'Материалы курса доступны ученицам. Введите пароль, который дал преподаватель.'),
+    h('h2', { style: 'font-size:22px' }, 'Обучение'),
+    h('p', { class: 'muted', style: 'margin:0' }, 'База знаний и итоговый тест доступны ученицам. Введите пароль, который дал преподаватель.'),
     inp, err, h('div', { class: 'row' }, btn, h('button', { class: 'btn ghost', onclick: () => go('home') }, 'Назад'))));
 }
 
