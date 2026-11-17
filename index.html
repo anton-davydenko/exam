@@ -194,6 +194,17 @@ body { margin: 0; }
 .choice.accent { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .choice.accent > span { color: var(--accent-ink); opacity: .85; }
 .choice-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.choices.three { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.choices.three .pill { white-space: nowrap; }
+@media (max-width: 640px) { .choices.three { grid-template-columns: 1fr 1fr; } .choices.three > :first-child { grid-column: 1 / -1; } }
+a.choice { color: inherit; text-decoration: none; }
+.master-entry { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; border: 1px dashed var(--accent); background: var(--accent-soft); border-radius: 18px; padding: 14px 16px; color: var(--ink); text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
+.master-entry:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -18px rgb(120 30 70 / .5); }
+.master-entry .ico { background: var(--surface); }
+.master-entry-text { display: grid; gap: 2px; }
+.master-entry-text b { font-family: var(--f-display); font-size: 16px; }
+.master-entry-text span { font-size: 13.5px; color: var(--muted); }
+.master-entry-arrow { font-size: 22px; font-weight: 700; color: var(--accent); }
 .ico { display: inline-flex; width: 40px; height: 40px; border-radius: 12px; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); }
 .choice.accent .ico { background: rgb(255 255 255 / .18); color: var(--accent-ink); }
 .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--sunk); border-radius: 999px; padding: 2px 10px 2px 2px; }
@@ -481,6 +492,8 @@ const lockIcon = () => h('span', { class: 'ico', html: '<svg width="22" height="
 const bookIcon = () => h('span', { class: 'ico', html: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5c2.8-1 5.6-1 8 .8 2.4-1.8 5.2-1.8 8-.8v13c-2.8-1-5.6-1-8 .8-2.4-1.8-5.2-1.8-8-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6.3v13" stroke="currentColor" stroke-width="1.8"/></svg>' });
 const testIcon = () => h('span', { class: 'ico', html: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 13h4l2-6 3 11 3-14 2.5 9H22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>' });
 
+const BOOKING_URL = 'https://n353828.yclients.ru/company/337833/personal/menu?o=';
+const calIcon = () => h('span', { class: 'ico', html: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 14.5l2.2 2.2 4.6-4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' });
 function renderHome() {
   const nSec = kbEnv ? (data.kbSectionCount || '') : '';
   return h('div', { class: 'wrap' },
@@ -490,15 +503,23 @@ function renderHome() {
         h('div', { class: 'label' }, 'Школа электроэпиляции'),
         h('h1', null, 'my ', h('em', null, 'electra')),
         h('p', { class: 'muted' }, 'Материалы курса и итоговый экзамен для учениц Анны Капитоновой — врача-косметолога и электролога с девятилетним опытом.'),
-        h('div', { class: 'choices' },
+        h('div', { class: 'choices three' },
+          h('a', { class: 'choice accent', id: 'go-book', href: BOOKING_URL, target: '_blank', rel: 'noopener' },
+            h('div', { class: 'choice-top' }, calIcon()),
+            h('b', null, 'Записаться онлайн'),
+            h('span', null, 'Выберите процедуру, мастера и удобное время.')),
+          h('button', { class: 'choice', id: 'go-test', onclick: () => { quiz = null; go('quiz'); } },
+            h('div', { class: 'choice-top' }, testIcon()),
+            h('b', null, 'Обучение'),
+            h('span', null, `Итоговый тест курса: ${Math.min(data.questionsPerAttempt || 20, data.questions.length)} вопросов, разбор ошибок и сертификат.`)),
           h('button', { class: 'choice', id: 'go-kb', onclick: () => go(kb ? 'kb' : 'kb-lock', { section: null }) },
             h('div', { class: 'choice-top' }, bookIcon(), kb ? null : h('span', { class: 'pill' }, lockIcon(), 'по паролю')),
             h('b', null, 'База знаний'),
-            h('span', null, nSec ? `Методичка курса: ${nSec} ${plural(nSec, 'раздел', 'раздела', 'разделов')}, схемы и фото из практики.` : 'Методичка курса, схемы и фото из практики.')),
-          h('button', { class: 'choice accent', id: 'go-test', onclick: () => { quiz = null; go('quiz'); } },
-            h('div', { class: 'choice-top' }, testIcon()),
-            h('b', null, 'Итоговый тест'),
-            h('span', null, `${Math.min(data.questionsPerAttempt || 20, data.questions.length)} вопросов, баллы, разбор ошибок и сертификат.`))))),
+            h('span', null, nSec ? `Методичка курса: ${nSec} ${plural(nSec, 'раздел', 'раздела', 'разделов')}, схемы и фото из практики.` : 'Методичка курса, схемы и фото из практики.'))),
+        h('a', { class: 'master-entry', href: 'master.html' },
+          h('span', { class: 'ico', html: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' }),
+          h('span', { class: 'master-entry-text' }, h('b', null, 'Кабинет мастера'), h('span', null, 'Для мастеров салона: внести процедуру и посмотреть заработок')),
+          h('span', { class: 'master-entry-arrow', 'aria-hidden': 'true' }, '→')))),
     contactsBlock(),
     h('div', { class: 'row', style: 'justify-content:center' },
       h('button', { class: 'linkish', onclick: () => go(authorUnlocked ? 'admin' : 'pin') }, 'Для автора')));
