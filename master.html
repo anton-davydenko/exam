@@ -49,9 +49,10 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; font-size: 15px; color: inherit; text-decoration: none; }
 .brand small { font-family: var(--f-body); font-weight: 600; color: var(--muted); font-size: 13px; }
 .who { display: flex; align-items: center; gap: 8px; }
-.sheet-link { display: inline-flex; align-items: center; gap: 6px; background: var(--good-soft); color: var(--good); }
+.ghost-pill.sheet-link { display: inline-flex; align-items: center; gap: 6px; background: var(--good-soft); color: var(--good); }
+.sheet-link .si { display: inline-flex; }
 .sheet-link svg { flex: none; }
-@media (max-width: 480px) { .brand small { display: none; } .sheet-link span { display: none; } .sheet-link { padding: 7px 10px; } }
+@media (max-width: 480px) { .brand small { display: none; } .sheet-link .st { display: none; } .ghost-pill.sheet-link { padding: 8px 10px; } }
 .synced { font-size: 12.5px; color: var(--muted); text-align: center; }
 .ghost-pill { border: 0; background: var(--sunk); border-radius: 999px; padding: 7px 14px; font-weight: 600; font-size: 14px; color: var(--ink); text-decoration: none; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: 14px; background: var(--accent-soft); color: var(--accent); flex: none; }
@@ -198,6 +199,15 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .toast { visibility: hidden; position: fixed; left: 50%; top: 14px; transform: translate(-50%, -140%); background: var(--good); color: #fff; padding: 12px 18px; border-radius: 14px; font-weight: 700; z-index: 50; transition: transform .25s ease; box-shadow: 0 12px 30px -12px rgb(0 0 0 / .4); max-width: calc(100% - 28px); }
 .toast.show { transform: translate(-50%, 0); visibility: visible; }
 .toast.bad { background: var(--bad); }
+.love { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; padding: 18px 44px 18px 18px; border-radius: var(--r);
+  background: linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 55%, var(--spark-soft))); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  animation: love-in .6s ease both; }
+.love p { margin: 0 0 6px; font-size: 16px; line-height: 1.45; text-wrap: pretty; }
+.love b { font-family: var(--f-display); color: var(--accent); font-size: 15px; }
+.love-heart { font-size: 26px; line-height: 1; color: var(--accent); animation: love-beat 1.6s ease-in-out infinite; }
+.love-x { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; }
+@keyframes love-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes love-beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.18); } 30% { transform: scale(1); } 45% { transform: scale(1.12); } }
 .demo { background: var(--spark-soft); color: var(--spark); border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; }
 .loading { display: grid; place-items: center; padding: 50px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -321,7 +331,7 @@ function applyData(j) {
   S.loadedAt = Date.now();
   if (j.today) S.today = j.today;
 }
-function logout() { store.del('electra-master'); Object.assign(S, { master: null, token: null, settings: null, rows: [], pick: null }); render(); }
+function logout() { store.del('electra-master'); Object.assign(S, { master: null, token: null, settings: null, rows: [], pick: null, note: null, noteHidden: false }); render(); }
 
 let toastT;
 function toast(msg, bad) {
@@ -332,7 +342,7 @@ function toast(msg, bad) {
 // ---------- экраны
 function render() {
   const v = $('#view');
-  $('#who').replaceChildren(...(S.master ? [S.sheetUrl ? h('a', { class: 'ghost-pill sheet-link', href: S.sheetUrl, target: '_blank', rel: 'noopener' }, sheetIcon(), h('span', null, 'Моя таблица')) : null, h('span', { class: 'avatar' }, S.master[0]), h('button', { class: 'ghost-pill', onclick: logout }, 'Выйти')].filter(Boolean)
+  $('#who').replaceChildren(...(S.master ? [S.sheetUrl ? h('a', { class: 'ghost-pill sheet-link', href: S.sheetUrl, target: '_blank', rel: 'noopener', 'aria-label': 'Моя таблица' }, sheetIcon(), h('span', { class: 'st' }, 'Моя таблица')) : null, h('span', { class: 'avatar' }, S.master[0]), h('button', { class: 'ghost-pill', onclick: logout }, 'Выйти')].filter(Boolean)
     : [h('a', { class: 'ghost-pill', href: './' }, '← На сайт')]));
   if (!S.master) return v.replaceChildren(S.pick ? renderPin() : renderPick());
   if (!S.settings) return v.replaceChildren(h('div', { class: 'loading' }, 'Загружаю ваши записи…'));
@@ -340,7 +350,7 @@ function render() {
     [['add', 'Запись'], ['list', 'Мои записи'], ['sum', 'Итоги']].map(([k, t]) =>
       h('button', { 'aria-pressed': String(S.tab === k), onclick: () => { S.tab = k; S.confirmDel = null; render(); window.scrollTo({ top: 0 }); if (k !== 'add') refresh(); } }, t)));
   const body = S.tab === 'add' ? renderAdd() : S.tab === 'list' ? renderList() : renderSum();
-  v.replaceChildren(h('div', { class: 'wrap' }, DEMO ? h('div', { class: 'demo' }, 'Демо-режим: записи хранятся только в этом браузере и в таблицу не попадают.') : null, tabs, body));
+  v.replaceChildren(h('div', { class: 'wrap' }, DEMO ? h('div', { class: 'demo' }, 'Демо-режим: записи хранятся только в этом браузере и в таблицу не попадают.') : null, annaNote(), tabs, body));
 }
 
 function renderPick() {
@@ -573,7 +583,7 @@ const syncNote = () => h('div', { class: 'synced' }, 'Данные из ваше
 const tile = (b, s) => h('div', { class: 'tile' }, h('b', null, b), h('span', null, s));
 function plural(n, a, b, c) { n = Math.abs(n) % 100; const k = n % 10; return n > 10 && n < 20 ? c : k > 1 && k < 5 ? b : k === 1 ? a : c; }
 
-const sheetIcon = () => h('span', { html: '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M4 15h16M10 9v12" stroke="currentColor" stroke-width="2"/></svg>' });
+const sheetIcon = () => h('span', { class: 'si', html: '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M4 15h16M10 9v12" stroke="currentColor" stroke-width="2"/></svg>' });
 // Сайт ничего не хранит у себя: данные каждый раз читаются из таблицы мастера.
 // Поэтому записи, внесённые прямо в таблицу, тоже видны здесь — после обновления.
 let refreshing = false;
@@ -586,6 +596,24 @@ async function refresh(force) {
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(true); });
 window.addEventListener('focus', () => refresh());
+
+// ---------- пасхалка только для Анны: новое случайное сообщение при каждом открытии страницы
+const ANNA_NOTES = ["Доброе утро, солнышко! Пусть сегодня каждая клиентка уходит от тебя счастливой.", "Ты делаешь мир красивее — в прямом смысле, каждый день.", "Твои руки творят чудеса, а твоя улыбка — ещё большие.", "Я горжусь тобой больше, чем умею сказать словами.", "Ты построила целый салон. Ты вообще понимаешь, какая ты сильная?", "Сделай сегодня паузу на кофе — ты её заслужила.", "С тобой даже понедельник кажется пятницей.", "Ты самый лучший врач, самый лучший электролог и самый лучший человек.", "Помни: ты не обязана успевать всё. Ты и так делаешь невероятно много.", "Твой смех — моя любимая музыка.", "Каждая твоя ученица уносит с собой кусочек твоего таланта.", "Ты красивая. Просто напоминаю, вдруг забыла.", "Сегодня отличный день, чтобы гордиться собой.", "Ты моё самое большое везение.", "Девять лет опыта — и всё та же искорка в глазах. Как ты это делаешь?", "Если устанешь — я рядом. Всегда.", "Ты умеешь превращать обычный день в праздник.", "Каждая твоя процедура — маленькое произведение искусства.", "Я до сих пор улыбаюсь, когда вспоминаю, как мы познакомились.", "Ты вдохновляешь всех вокруг, даже если сама этого не замечаешь.", "Не забудь поесть нормально, а не только перекусить на бегу!", "Ты — лучшее, что со мной случилось.", "Твоя забота о клиентках видна в каждой мелочи.", "Ты делаешь сложные вещи так легко, будто это магия.", "Знаешь, что самое красивое в салоне? Его хозяйка.", "Пусть сегодня все процедуры пройдут идеально, а вечер будет уютным.", "Ты сильнее любых трудностей. Проверено.", "Мне повезло просыпаться рядом с тобой.", "Ты умница. Не потому что так надо говорить, а потому что это правда.", "Каждая запись в этой таблице — это чья-то радость благодаря тебе.", "Ты заслуживаешь отпуск у моря. Давай запланируем?", "Твоё упорство меня восхищает.", "Ты превращаешь мечты в реальность — свои и чужие.", "Пусть сегодня тебе встречаются только приятные люди.", "Ты светишься, когда говоришь о своей работе. Это прекрасно.", "Ты мой самый любимый человек на свете.", "Обними себя за меня, пока я не рядом.", "Ты учишь других не только профессии, но и любви к делу.", "Ты справишься. Ты всегда справляешься.", "Твоя доброта — твоя суперсила.", "Сегодня ты ещё красивее, чем вчера. Как так?", "Твои клиентки счастливчики. Но я — больший.", "Ты создала то, чем можно гордиться всю жизнь.", "Помни про воду и про отдых между процедурами.", "С тобой хочется быть лучше.", "Ты умеешь слушать так, что людям становится легче.", "Каждый день с тобой — подарок.", "Ты нежная и сильная одновременно. Это редкость.", "Пусть сегодня кофе будет идеальным, а клиенты — пунктуальными.", "Ты мой дом.", "Ты потрясающе выглядишь в белом халате. И без него тоже.", "Твой профессионализм видно с первой минуты.", "Улыбнись — ты прекрасна, когда улыбаешься.", "Я верю в тебя на все сто. Нет, на все двести.", "Ты так много отдаёшь людям. Возьми сегодня что-то и для себя.", "Даже самые сложные дни заканчиваются. А я остаюсь.", "Ты — мой любимый повод вернуться домой пораньше.", "Твоя энергия заряжает весь салон.", "Ты делаешь людей увереннее в себе. Это бесценно.", "Мне нравится, как ты хмуришься, когда сосредоточена.", "Ты достойна всего самого лучшего. И даже больше.", "Пусть сегодняшний день будет лёгким, как облако.", "Ты — моя гордость и моя радость.", "Твой салон — это ты: красивый, тёплый и уютный.", "Каждая твоя победа — и моя тоже.", "Ты так здорово объясняешь, что даже я почти понял электроэпиляцию.", "Помни, что ты не одна. Мы команда.", "Сегодня ты заработаешь много — и улыбок тоже.", "Твоя красота — это не только внешность, но и сердце.", "Я скучаю по тебе, даже когда ты в соседней комнате.", "Ты умеешь видеть красоту в каждом человеке.", "Пусть сегодня всё получается с первого раза.", "Ты — моя любимая история.", "Сделай глубокий вдох. Ты всё делаешь правильно.", "Твоё «доброе утро» — лучшее начало дня.", "Ты строишь что-то большое, и это видно.", "Мне нравится в тебе всё. Даже то, что ты считаешь недостатками.", "Пусть вечером тебя ждёт что-то вкусное. Может, я приготовлю?", "Ты умеешь заботиться так, как никто другой.", "Каждый день я влюбляюсь в тебя заново.", "Ты — тот человек, на которого хочется равняться.", "Сегодня твой день. Как и любой другой.", "Твои ученицы будут вспоминать тебя с благодарностью всю жизнь.", "Ты делаешь мою жизнь ярче.", "Даже если день не задался — ты всё равно лучшая.", "Ты храбрая: открыть своё дело — это смело.", "Пусть удача сегодня ходит за тобой по пятам.", "Ты пахнешь счастьем.", "Ты моё вдохновение.", "Ты так красиво умеешь мечтать. Давай мечтать вместе.", "Пусть сегодня не будет ни одной сорванной записи.", "Ты — моё самое тёплое «навсегда».", "Спасибо, что ты есть.", "Ты делаешь то, что любишь, и любишь то, что делаешь. Это видно.", "Твоя улыбка способна починить любой день.", "Сегодня ты заслуживаешь цветы. Намёк понят.", "Ты — моя самая большая удача и моя самая большая любовь.", "Все звёзды мира не сравнятся с твоими глазами.", "Знаешь, кто тебя ждёт вечером и очень соскучился? Я.", "Ты — любимая женщина, лучшая подруга и лучший мастер в одном человеке."];
+function pickAnnaNote() {
+  const last = store.get('electra-anna-last');
+  let i = Math.floor(Math.random() * ANNA_NOTES.length);
+  if (i === last) i = (i + 1 + Math.floor(Math.random() * (ANNA_NOTES.length - 1))) % ANNA_NOTES.length;
+  store.set('electra-anna-last', i);
+  return ANNA_NOTES[i];
+}
+function annaNote() {
+  if (S.master !== 'Анна' || S.noteHidden) return null;
+  if (!S.note) S.note = pickAnnaNote();
+  return h('section', { class: 'love', role: 'note' },
+    h('span', { class: 'love-heart', 'aria-hidden': 'true' }, '♥'),
+    h('div', null, h('p', null, S.note), h('b', null, 'Я люблю тебя ❤️')),
+    h('button', { class: 'love-x', 'aria-label': 'Скрыть', onclick: () => { S.noteHidden = true; render(); } }, '×'));
+}
 
 // ---------- старт
 (async function boot() {
