@@ -518,7 +518,7 @@ function renderHome() {
             h('span', null, nSec ? `Методичка курса: ${nSec} ${plural(nSec, 'раздел', 'раздела', 'разделов')}, схемы и фото из практики.` : 'Методичка курса, схемы и фото из практики.'))),
         h('a', { class: 'master-entry', href: 'master.html' },
           h('span', { class: 'ico', html: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' }),
-          h('span', { class: 'master-entry-text' }, h('b', null, 'Кабинет мастера'), h('span', null, 'Для мастеров салона: внести процедуру и посмотреть заработок')),
+          h('span', { class: 'master-entry-text' }, h('b', null, 'Кабинет мастера')),
           h('span', { class: 'master-entry-arrow', 'aria-hidden': 'true' }, '→')))),
     contactsBlock(),
     h('div', { class: 'row', style: 'justify-content:center' },
