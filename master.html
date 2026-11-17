@@ -94,6 +94,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .quick { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 13px; font-size: 14px; font-weight: 600; color: var(--muted); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip-date { position: relative; overflow: hidden; cursor: pointer; display: inline-flex; align-items: center; }
+.chip-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0; font-size: 16px; -webkit-appearance: none; appearance: none; }
+.date-btn input { font-size: 16px; -webkit-appearance: none; appearance: none; }
 .stepper { display: grid; grid-template-columns: 56px 1fr 56px; gap: 8px; align-items: stretch; }
 .stepper button { border: 0; border-radius: 14px; background: var(--sunk); font-size: 26px; font-weight: 700; color: var(--ink); }
 .stepper input { text-align: center; font-family: var(--f-mono); font-size: 30px; font-weight: 700; padding: 8px; border-radius: 14px; }
@@ -171,11 +174,25 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .tile b { font-family: var(--f-mono); font-size: 22px; }
 .tile span { font-size: 13px; color: var(--muted); }
 .chart { display: grid; gap: 10px; }
-.bars { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding-top: 18px; }
-.bars div { flex: 1; background: var(--accent-soft); border-radius: 6px 6px 2px 2px; position: relative; min-height: 2px; }
-.bars div.has { background: var(--accent); }
-.bars div.today { outline: 2px solid var(--spark); outline-offset: 1px; }
-.bars div:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 8px; white-space: nowrap; z-index: 3; }
+.bars { display: flex; align-items: stretch; gap: 2px; height: 160px; padding-top: 6px; }
+.bars button { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 1px; display: flex; align-items: flex-end; border-radius: 6px; -webkit-tap-highlight-color: transparent; }
+.bars button i { display: block; width: 100%; background: var(--accent-soft); border-radius: 5px 5px 2px 2px; min-height: 3px; transition: background .15s; }
+.bars button.has i { background: var(--accent); opacity: .55; }
+.bars button.today i { box-shadow: 0 0 0 2px var(--spark); }
+.bars button[aria-pressed="true"] { background: var(--sunk); }
+.bars button[aria-pressed="true"] i { opacity: 1; }
+.daypick { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--sunk); border-radius: 12px; padding: 12px 14px; }
+.daypick b { font-family: var(--f-display); font-size: 15px; }
+.daypick b::first-letter { text-transform: uppercase; }
+.daypick span { font-family: var(--f-mono); font-weight: 700; white-space: nowrap; }
+.daylist { display: grid; gap: 4px; }
+.dayrow { display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; border: 0; background: transparent; padding: 8px 6px; border-radius: 10px; text-align: left; width: 100%; }
+.dayrow[aria-pressed="true"] { background: var(--sunk); }
+.dayrow .dd { font-size: 14px; font-weight: 600; }
+.dayrow .track { height: 10px; background: var(--sunk); border-radius: 999px; overflow: hidden; }
+.dayrow .track i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.dayrow .vv { font-family: var(--f-mono); font-weight: 700; font-size: 14px; text-align: right; }
+.dayrow .vv small { display: block; font-family: var(--f-body); font-weight: 500; font-size: 12px; color: var(--muted); }
 .axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-family: var(--f-mono); }
 
 .toast { visibility: hidden; position: fixed; left: 50%; top: 14px; transform: translate(-50%, -140%); background: var(--good); color: #fff; padding: 12px 18px; border-radius: 14px; font-weight: 700; z-index: 50; transition: transform .25s ease; box-shadow: 0 12px 30px -12px rgb(0 0 0 / .4); max-width: calc(100% - 28px); }
@@ -378,7 +395,14 @@ function renderAdd() {
     dateInp);
   const quickDates = h('div', { class: 'quick' },
     [[S.today, 'Сегодня'], [yest, 'Вчера']].map(([d, t]) => h('button', { class: 'chip', 'aria-pressed': String(e.date === d), onclick: () => { e.date = d; render(); } }, t)),
-    h('button', { class: 'chip', onclick: () => { try { dateInp.showPicker(); } catch (_) { dateInp.focus(); dateInp.click(); } } }, 'Другой день…'));
+    (() => {
+      // Невидимое поле даты лежит прямо поверх кнопки — касание на телефоне сразу открывает системный календарь.
+      const other = h('input', { type: 'date', value: e.date, max: S.today, 'aria-label': 'Выбрать другой день' });
+      other.onchange = () => { if (other.value) { e.date = other.value; render(); } };
+      other.onclick = () => { try { other.showPicker(); } catch (_) {} };
+      return h('label', { class: 'chip chip-date', 'aria-pressed': String(e.date !== S.today && e.date !== yest) },
+        e.date !== S.today && e.date !== yest ? dayTitle(e.date) : 'Другой день…', other);
+    })());
 
   // минуты
   const minInp = h('input', { class: 'input', type: 'number', inputmode: 'numeric', min: '1', step: '1', value: e.min, placeholder: '0', 'aria-label': 'Длительность, минут' });
@@ -514,6 +538,9 @@ function renderSum() {
   const perDay = Array.from({ length: dim }, (_, i) => R.filter(r => Number(r.date.slice(8)) === i + 1).reduce((a, r) => a + r.earn, 0));
   const max = Math.max(1, ...perDay);
   const workDays = perDay.filter(Boolean).length;
+  const worked = perDay.map((v, i) => v ? i : -1).filter(i => i >= 0).reverse();
+  if (!S.selDay || S.selDay.slice(0, 7) !== S.month) S.selDay = (isCur ? S.today : null) || (worked.length ? S.month + '-' + pad(worked[0] + 1) : S.month + '-01');
+  const sel = S.selDay, selRows = R.filter(r => r.date === sel), selEarn = selRows.reduce((a, r) => a + r.earn, 0);
   return h('div', { class: 'wrap' }, monthNav(loadMonth), syncNote(),
     h('section', { class: 'card big' }, h('div', { class: 'label' }, 'Заработано за ' + MONTHS[m - 1]),
       h('div', { class: 'num' }, rub(earn)),
@@ -526,9 +553,20 @@ function renderSum() {
     h('section', { class: 'card chart' }, h('div', { class: 'label' }, 'Заработок по дням'),
       h('div', { class: 'bars' }, perDay.map((v, i) => {
         const d = S.month + '-' + pad(i + 1);
-        return h('div', { class: (v ? 'has' : '') + (d === S.today ? ' today' : ''), style: 'height:' + Math.max(2, v / max * 100) + '%', 'data-tip': (i + 1) + ' ' + MONTHS_G[m - 1] + ': ' + rub(v) });
+        return h('button', { class: (v ? 'has' : '') + (d === S.today ? ' today' : ''), 'aria-pressed': String(d === sel), 'aria-label': (i + 1) + ' ' + MONTHS_G[m - 1] + ': ' + rub(v),
+          onclick: () => { S.selDay = d; render(); } }, h('i', { style: 'height:' + Math.max(2, v / max * 100) + '%' }));
       })),
-      h('div', { class: 'axis' }, h('span', null, '1'), h('span', null, String(Math.ceil(dim / 2))), h('span', null, String(dim)))));
+      h('div', { class: 'axis' }, h('span', null, '1'), h('span', null, String(Math.ceil(dim / 2))), h('span', null, String(dim))),
+      h('div', { class: 'daypick' }, h('b', null, dayTitle(sel)),
+        h('span', null, selRows.length ? selRows.length + ' ' + plural(selRows.length, 'процедура', 'процедуры', 'процедур') + ' · ' + rub(selEarn) : 'не работала'))),
+    worked.length ? h('section', { class: 'card', style: 'display:grid;gap:8px' }, h('div', { class: 'label' }, 'По дням'),
+      h('div', { class: 'daylist' }, worked.map(i => {
+        const d = S.month + '-' + pad(i + 1), cnt = R.filter(r => r.date === d).length;
+        return h('button', { class: 'dayrow', 'aria-pressed': String(d === sel), onclick: () => { S.selDay = d; render(); } },
+          h('span', { class: 'dd' }, (i + 1) + ' ' + MONTHS_G[m - 1].slice(0, 3) + ', ' + WD[parseIso(d).getDay()]),
+          h('span', { class: 'track' }, h('i', { style: 'width:' + Math.max(3, perDay[i] / max * 100) + '%' })),
+          h('span', { class: 'vv' }, rub(perDay[i]), h('small', null, cnt + ' ' + plural(cnt, 'процедура', 'процедуры', 'процедур'))));
+      }))) : null);
 }
 const syncNote = () => h('div', { class: 'synced' }, 'Данные из вашей таблицы · обновлено в ' + new Date(S.loadedAt || Date.now()).toTimeString().slice(0, 5) + ' · ',
   h('button', { class: 'del', onclick: async (e) => { e.target.textContent = 'обновляю…'; await refresh(true); render(); } }, 'обновить'));
