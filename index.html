@@ -514,9 +514,7 @@ function renderHome() {
           h('span', { class: 'ico', html: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' }),
           h('span', { class: 'master-entry-text' }, h('b', null, 'Кабинет мастера')),
           h('span', { class: 'master-entry-arrow', 'aria-hidden': 'true' }, '→')))),
-    contactsBlock(),
-    h('div', { class: 'row', style: 'justify-content:center' },
-      h('button', { class: 'linkish', onclick: () => go(authorUnlocked ? 'admin' : 'pin') }, 'Для автора')));
+    contactsBlock());
 }
 const ICONS = {
   pin: '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.5s-6.5-6.2-6.5-11.3a6.5 6.5 0 0 1 13 0c0 5.1-6.5 11.3-6.5 11.3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10.2" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
@@ -552,7 +550,9 @@ function renderLearn() {
       h('button', { class: 'choice accent', id: 'go-test', onclick: () => { quiz = null; go('quiz'); } },
         h('div', { class: 'choice-top' }, testIcon()),
         h('b', null, 'Итоговый тест'),
-        h('span', null, `${Math.min(data.questionsPerAttempt || 20, data.questions.length)} вопросов, баллы, разбор ошибок и сертификат.`))));
+        h('span', null, `${Math.min(data.questionsPerAttempt || 20, data.questions.length)} вопросов, баллы, разбор ошибок и сертификат.`))),
+    h('div', { class: 'row', style: 'justify-content:center' },
+      h('button', { class: 'linkish', onclick: () => go(authorUnlocked ? 'admin' : 'pin') }, 'Для автора')));
 }
 
 // ---------- knowledge base: lock
