@@ -507,7 +507,7 @@ function renderList() {
 function renderSum() {
   if (!S.rows) return h('div', { class: 'loading' }, 'Загружаю…');
   const R = S.rows, sum = k => R.reduce((a, r) => a + (Number(r[k]) || 0), 0);
-  const earn = sum('earn'), pay = sum('pay'), n = R.length, mins = sum('min'), up = sum('up');
+  const earn = sum('earn'), n = R.length, mins = sum('min'), up = sum('up');
   const isCur = S.month === S.today.slice(0, 7);
   const todayEarn = R.filter(r => r.date === S.today).reduce((a, r) => a + r.earn, 0);
   const [y, m] = S.month.split('-').map(Number), dim = new Date(y, m, 0).getDate();
@@ -521,7 +521,6 @@ function renderSum() {
     h('div', { class: 'tiles' },
       isCur ? tile(rub(todayEarn), 'заработано сегодня') : null,
       tile(int(mins), 'минут работы'),
-      tile(rub(pay), 'оплатили клиенты'),
       tile(rub(n ? earn / n : 0), 'в среднем за процедуру'),
       up ? tile(rub(up), 'доппродажи') : null),
     h('section', { class: 'card chart' }, h('div', { class: 'label' }, 'Заработок по дням'),
